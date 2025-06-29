@@ -65,7 +65,7 @@ def predict(data: WeatherInput):
         "congestion_score": round(float(predicted_value), 2)
     }'''
 
-# ai_server.py
+# ai_server.py 배포 테스트용
 
 from fastapi import FastAPI
 
