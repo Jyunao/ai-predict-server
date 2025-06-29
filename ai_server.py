@@ -6,52 +6,62 @@ import joblib
 
 app = FastAPI()
 
-# 1. 모델 로딩
-model = joblib.load("model.pkl")
-class_labels = model.classes_.tolist()  # 예: ["HIGH", "LOW", "MEDIUM"]
+# 모델 로딩
+model = joblib.load("congestion_model.pkl")
 
-# 2. 입력 데이터 모델
 class WeatherInput(BaseModel):
     location_id: str
     temp: float
     humidity: float
     rain: bool
 
+# 혼잡도 등급 매핑 함수 예시
+def categorize_congestion(value):
+    if value >= 70:
+        return "HIGH"
+    elif value >= 40:
+        return "MEDIUM"
+    else:
+        return "LOW"
+
 @app.post("/predict")
 def predict(data: WeatherInput):
+    # 1. 입력값 구성
+    features = [[data.temp, data.humidity, int(data.rain)]]
+
+    # 2. 예측 수행 (수치값)
     try:
-        # 3. 입력값 변환
-        features = [[data.temp, data.humidity, int(data.rain)]]
+        predicted_value = model.predict(features)[0] 
+    except Exception as e:
+        return {"status": "error", "message": f"예측 실패: {str(e)}"}
 
-        # 4. 예측 및 확률 계산
-        prediction = model.predict(features)[0]
-        probabilities = model.predict_proba(features)[0]
-        probability_dict = {
-            label: round(prob, 4) for label, prob in zip(class_labels, probabilities)
-        }
+    # 3. 등급 분류
+    congestion_level = categorize_congestion(predicted_value)
 
-        # 5. 백엔드로 전송할 결과
-        result = {
-            "location_id": data.location_id,
-            "predicted_congestion_level": prediction,
-            "prediction_probability": probability_dict,
-            "weather": {
-                "temp": data.temp,
-                "humidity": data.humidity,
-                "rain": data.rain
-            },
-            "predicted_at": datetime.utcnow().isoformat()
-        }
+    # 4. 백엔드에 보낼 결과 구성
+    result = {
+        "location_id": data.location_id,
+        "predicted_congestion_level": congestion_level,
+        "predicted_congestion_score": round(float(predicted_value), 2), 
+        "weather": {
+            "temp": data.temp,
+            "humidity": data.humidity,
+            "rain": data.rain
+        },
+        "predicted_at": datetime.utcnow().isoformat()
+    }
 
+    # 5. 백엔드로 POST
+    try:
         response = requests.post("https://api.jionly.tech/api/congestion", json=result)
         response.raise_for_status()
-
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"백엔드 전송 실패: {str(e)}"}
 
-    # 6. 클라이언트에도 응답
+    # 6. 클라이언트에도 결과 응답
     return {
         "status": "ok",
-        "congestion_level": prediction,
-        "probabilities": probability_dict
+        "congestion_level": congestion_level,
+        "congestion_score": round(float(predicted_value), 2)
     }
+
