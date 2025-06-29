@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+'''from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime
 import requests
@@ -63,5 +63,16 @@ def predict(data: WeatherInput):
         "status": "ok",
         "congestion_level": congestion_level,
         "congestion_score": round(float(predicted_value), 2)
-    }
+    }'''
+
+# ai_server.py
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "🚀 FastAPI 서버가 정상적으로 작동 중입니다!"}
+
 
