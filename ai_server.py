@@ -13,7 +13,6 @@ model = joblib.load("congestion_model.pkl")
 class WeatherInput(BaseModel):
     line: str
     station_name: str
-    station_code: str
     datetime: str
     TMP: float  # 기온
     REH: float  # 습도
@@ -35,17 +34,40 @@ def categorize_congestion(value: float) -> str:
 
 @app.post("/predict")
 def predict(data: WeatherInput):
-    # 입력값 순서 맞추기 (모델 학습에 맞게!)
-    features = [[
-        data.TMP,
-        data.REH,
-        data.PCP,
-        data.WSD,
-        data.SNO,
-        data.VEC
-    ]]
-
+    # 날짜 파싱 및 파생변수 생성
     try:
+        dt = datetime.fromisoformat(data.datetime)
+        year = dt.year
+        month = dt.month
+        day = dt.day
+        hour = dt.hour
+        weekend = int(dt.weekday() >= 5)  # 토/일: 1, 평일: 0
+        season = ((month % 12 + 3) // 3 - 1)  # 0:봄, 1:여름, 2:가을, 3:겨울
+        
+        # 불쾌지수 계산 (섭씨 기온 사용)
+        Ta = data.TMP
+        RH = data.REH / 100  # 0~1로 변환
+        discomfort = (9 / 5) * Ta - 0.55 * (1 - RH) * ((9 / 5) * Ta - 26) + 32
+        
+    except Exception as e:
+        return {"status": "error", "message": f"날짜 파싱 실패: {str(e)}"}
+
+    # 입력 피처 순서 (모델 학습 기준과 맞춰야함)
+    try:
+        features = [[
+            int(data.line),         # line
+            data.TMP,               # temperature
+            data.VEC,               # wind_direction
+            data.WSD,               # wind_speed
+            data.PCP,               # hourly_precipitation
+            data.REH,               # humidity
+            data.SNO,               # snow
+            year, month, day, hour, # time features
+            discomfort,
+            weekend,
+            season
+        ]]
+
         predicted_value = model.predict(features)[0]
     except Exception as e:
         return {"status": "error", "message": f"예측 실패: {str(e)}"}
@@ -55,7 +77,6 @@ def predict(data: WeatherInput):
     result = {
         "line": data.line,
         "station_name": data.station_name,
-        "station_code": data.station_code,
         "datetime": data.datetime,
         "TMP": data.TMP,
         "REH": data.REH,
@@ -63,6 +84,13 @@ def predict(data: WeatherInput):
         "WSD": data.WSD,
         "SNO": data.SNO,
         "VEC": data.VEC,
+        "year": year,
+        "month": month,
+        "day": day,
+        "hour": hour,
+        "season": season,
+        "weekend": weekend,
+        "discomfort": round(discomfort, 2),
         "predicted_congestion_score": round(float(predicted_value), 2),
         "predicted_congestion_level": level
     }
