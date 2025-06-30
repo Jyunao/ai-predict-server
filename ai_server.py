@@ -6,7 +6,7 @@ import joblib
 
 app = FastAPI()
 
-# 모델 로딩
+# 모델 로딩 (서버 시작 전 무조건 한 번만 로딩)
 model = joblib.load("congestion_model.pkl")
 
 class WeatherInput(BaseModel):
