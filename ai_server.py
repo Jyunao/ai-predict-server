@@ -289,7 +289,7 @@ def predict(data: WeatherInput):
         return {"status": "error", "message": f"날짜 파싱 실패: {e}"}
 
     # 모델 예측
-    try:
+   try:
         features = [[
             int(data.line), data.TMP, data.VEC, data.WSD,
             data.PCP, data.REH, data.SNO,
@@ -301,9 +301,6 @@ def predict(data: WeatherInput):
         return {"status": "error", "message": f"예측 실패: {e}"}
 
     level = categorize_congestion(predicted_value)
-
-    # 백엔드 전송 직전 시간 측정
-    before_send = time.time()
 
     result = {
         "line": data.line,
@@ -326,7 +323,7 @@ def predict(data: WeatherInput):
         "predicted_congestion_level": level
     }
 
-    try:
+   ''' try:
         response = requests.post("https://api.jionly.tech/api/congestion", json=result)
         response.raise_for_status()
     except Exception as e:
@@ -337,13 +334,15 @@ def predict(data: WeatherInput):
 
     # 시간 계산
     backend_time = round(after_send - before_send, 3)
-    total_time = round(after_send - start_time, 3)
+    total_time = round(after_send - start_time, 3)'''
+
+    # 전체 처리 시간 측정 종료
+    total_time = round(time.time() - start_time, 3)
 
     return {
         "status": "ok",
         "congestion_level": level,
         "congestion_score": round(float(predicted_value), 2),
-        "backend_time_sec": backend_time,
         "total_time_sec": total_time
     }
 
