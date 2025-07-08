@@ -235,15 +235,27 @@ app = FastAPI()
 
 # 모델 파일 경로 & Google Drive 공유 링크
 MODEL_PATH = "congestion_model.pkl"
-DRIVE_URL = "https://drive.google.com/uc?export=download&id=13KwvWuWRXaDVQOU5-TeZMxFYPGE3KcN"
+DRIVE_URL = "https://drive.google.com/uc?id=13KwvWuWRXaDVQOU5-TeZMxFYPGE3KJcN"
+
 
 # FastAPI startup 이벤트에서 모델 다운로드 및 로드
 @app.on_event("startup")
 def load_model():
     global model
     if not os.path.exists(MODEL_PATH):
-        gdown.download(DRIVE_URL, MODEL_PATH, fuzzy=True)
-    model = joblib.load(MODEL_PATH)
+        try:
+            print("모델 파일이 존재하지 않아 Google Drive에서 다운로드를 시도합니다...")
+            gdown.download(DRIVE_URL, MODEL_PATH, fuzzy=True)
+            print("모델 다운로드 완료.")
+        except Exception as e:
+            print(f"모델 다운로드 실패: {e}")
+            raise RuntimeError("모델 파일 다운로드에 실패했습니다. 서버를 종료합니다.")
+    try:
+        model = joblib.load(MODEL_PATH)
+        print("모델 로드 완료.")
+    except Exception as e:
+        raise RuntimeError(f"모델 로딩 실패: {e}")
+
 
 # 입력 데이터 모델
 class WeatherInput(BaseModel):
