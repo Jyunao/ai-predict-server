@@ -358,7 +358,7 @@ import time
 app = FastAPI()
 
 # 모델 파일 경로 & Google Drive 공유 링크
-MODEL_PATH = "congestion_model.pkl"
+MODEL_PATH = "congestion_model.bin"
 #DRIVE_URL = "https://drive.google.com/uc?id=13KwvWuWRXaDVQOU5-TeZMxFYPGE3KJcN" #pkl
 DRIVE_URL = "https://drive.google.com/uc?id=1EO8Xi0HYb-w8pK8o5GaCr4Edo066qkyX" #bin
 
