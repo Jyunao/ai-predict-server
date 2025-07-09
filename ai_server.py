@@ -123,7 +123,7 @@ import time
 app = FastAPI()
 
 # 모델 파일 경로 & Google Drive 공유 링크
-MODEL_PATH = "congestion_model.bin"
+MODEL_PATH = "congestion_model.pkl"
 DRIVE_URL = "https://drive.google.com/uc?id=13KwvWuWRXaDVQOU5-TeZMxFYPGE3KJcN" #pkl
 
 
@@ -132,6 +132,7 @@ class WeatherInput(BaseModel):
     line: str
     station_name: str
     datetime: str
+    direction: int #방향 추가
     TMP: float  # 기온
     REH: float  # 습도
     PCP: float  # 강수량
@@ -193,7 +194,7 @@ def predict(data: WeatherInput):
             int(data.line), data.TMP, data.VEC, data.WSD,
             data.PCP, data.REH, data.SNO,
             year, month, day, hour,
-            discomfort, weekend, season
+            discomfort, weekend, season, data.direction
         ]]
         predicted_value = model.predict(features)[0]
     except Exception as e:
@@ -205,6 +206,7 @@ def predict(data: WeatherInput):
         "line": data.line,
         "station_name": data.station_name,
         "datetime": data.datetime,
+        "direction": data.direction,
         "TMP": data.TMP,
         "REH": data.REH,
         "PCP": data.PCP,
